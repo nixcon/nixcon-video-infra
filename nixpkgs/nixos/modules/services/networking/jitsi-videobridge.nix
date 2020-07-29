@@ -221,7 +221,7 @@ in
         "export ${toVarName name}=$(cat ${xmppConfig.passwordFile})\n"
       ) cfg.xmppConfigs))
       + ''
-        ${pkgs.jitsi-videobridge}/bin/jitsi-videobridge --apis=none
+        ${pkgs.jitsi-videobridge}/bin/jitsi-videobridge --apis=rest
       '';
 
       serviceConfig = {
