@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, dpkg, jre_headless, nixosTests }:
+{ stdenv, fetchurl, dpkg, jre_headless, nixosTests, openssl, makeWrapper }:
 
 let
   pname = "jitsi-videobridge2";
@@ -15,6 +15,8 @@ stdenv.mkDerivation {
 
   unpackCmd = "${dpkg}/bin/dpkg-deb -x $src debcontents";
 
+  buildInputs = [ makeWrapper ];
+
   installPhase = ''
     substituteInPlace usr/share/jitsi-videobridge/jvb.sh \
       --replace "exec java" "exec ${jre_headless}/bin/java"
@@ -23,7 +25,8 @@ stdenv.mkDerivation {
     mv etc/jitsi/videobridge/logging.properties $out/etc/jitsi/videobridge/
     cp ${./logging.properties-journal} $out/etc/jitsi/videobridge/logging.properties-journal
     mv usr/share/jitsi-videobridge/* $out/share/jitsi-videobridge/
-    ln -s $out/share/jitsi-videobridge/jvb.sh $out/bin/jitsi-videobridge
+    makeWrapper $out/share/jitsi-videobridge/jvb.sh $out/bin/jitsi-videobridge \
+      --suffix LD_LIBRARY_PATH : ${openssl.out}/lib
   '';
 
   passthru.tests = {
