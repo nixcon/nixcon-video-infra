@@ -279,12 +279,12 @@ in
     };
   };
 
-  rtmp ={
+  rtmp = {
     src = fetchFromGitHub {
-      owner = "arut";
+      owner = "ut0mt8";
       repo = "nginx-rtmp-module";
-      rev = "v1.2.1";
-      sha256 = "0na1aam176irz6w148hnvamqy1ilbn4abhdzkva0yrm35a3ksbzn";
+      rev = "f0ea62342a4eca504b311cd5df910d026c3ea4cf";
+      sha256 = "0kmh4pjrjsmial0rnxzmm123pzmq13g4afiadn2vm45y3c0cja54";
     };
   };
 
