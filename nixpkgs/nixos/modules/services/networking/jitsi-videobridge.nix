@@ -224,6 +224,8 @@ in
         ${pkgs.jitsi-videobridge}/bin/jitsi-videobridge --apis=rest
       '';
 
+      restartIfChanged = false;
+
       serviceConfig = {
         Type = "exec";
 
