@@ -3,11 +3,12 @@
 # SPDX-FileCopyrightText: 2020 edef <edef@edef.eu>
 # SPDX-License-Identifier: MIT
 
-{ ... }:
+{ lib, ... }:
 
 {
   imports = [
     ../modules/jitsi
+    ../modules/prometheus.nix
     ../profiles/base.nix
     ../profiles/gcloud.nix
   ];
@@ -15,10 +16,32 @@
   networking.hostName = "jitsi";
   networking.domain = "nixcon.net";
 
+  networking.hosts = {
+    "127.0.0.1" = [ "auth.jitsi.nixcon.net" ];
+  };
+
   # TOOD: set up security@nixcon.net; have that forward to everyone on
   # the team, and then set this globally in acme.nix.
   security.acme.email = "edef+nixcon@mutable.io";
 
   nixcon.jitsi.enable = true;
   nixcon.jitsi.videobridge.localAddress = "10.164.0.2";
+
+  services.prometheus.enable = true;
+  services.grafana = {
+    enable = true;
+    # TODO(edef): put this behind nginx
+    addr = "0.0.0.0";
+    # TODO(edef): set domain
+    provision = {
+      enable = true;
+      datasources = lib.singleton {
+        type = "prometheus";
+        name = "Prometheus";
+        url = "http://localhost:9090";
+      };
+    };
+  };
+
+  services.prometheus.exporters.node.enable = true;
 }
