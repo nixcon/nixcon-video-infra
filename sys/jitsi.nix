@@ -7,7 +7,7 @@
 
 {
   imports = [
-    ../modules/jitsi.nix
+    ../modules/jitsi
     ../profiles/base.nix
     ../profiles/gcloud.nix
   ];

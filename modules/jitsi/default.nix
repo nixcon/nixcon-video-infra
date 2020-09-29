@@ -86,5 +86,10 @@ in
         enableTcc = true;
       };
     };
+
+    services.prosody = {
+      extraModules = [ "muc_stats" ];
+      extraPluginPaths = [ ./prosody-modules ];
+    };
   };
 }
