@@ -48,6 +48,7 @@ in
 
     services.jitsi-meet = {
       enable = true;
+      jibri.enable = true;
 
       # Set the XMPP server location.
       hostName = localHostname;
