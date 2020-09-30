@@ -16050,6 +16050,7 @@ in
   jitsi-meet = callPackage ../servers/web-apps/jitsi-meet { };
 
   jitsi-videobridge = callPackage ../servers/jitsi-videobridge { };
+  jibri = callPackage ../servers/jibri { };
 
   kapow = callPackage ../servers/kapow { };
 
