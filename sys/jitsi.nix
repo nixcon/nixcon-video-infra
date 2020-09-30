@@ -8,6 +8,7 @@
 {
   imports = [
     ../modules/jitsi
+    ../modules/jitsi/remote.nix
     ../modules/prometheus.nix
     ../profiles/base.nix
     ../profiles/gcloud.nix
@@ -26,6 +27,14 @@
 
   nixcon.jitsi.enable = true;
   nixcon.jitsi.videobridge.localAddress = "10.164.0.2";
+
+  nixcon.jitsi.remote = {
+    enable = true;
+    bindAddress = "10.164.0.2";
+    publicAddress = "jitsi.nixcon.net.";
+    bindPort = 4096;
+    region = "cloud";
+  };
 
   services.prometheus.enable = true;
   services.grafana = {

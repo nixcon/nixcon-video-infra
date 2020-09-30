@@ -39,7 +39,7 @@ in
   };
 
   config = mkIf cfg.enable {
-    networking.firewall.allowedTCPPorts = [ 80 443 4433 ];
+    networking.firewall.allowedTCPPorts = [ 80 443 4433 5222 ];
     networking.firewall.allowedUDPPorts = [ 10000 ];
 
     services.jitsi-videobridge.nat = {
@@ -85,8 +85,13 @@ in
         # Enable some RTP extensions, equivalent to jitsi meet
         enableRemb = true;
         enableTcc = true;
+
+        testing.octo.probability = 1;
+        deploymentInfo.userRegion = "cloud";
       };
     };
+
+    services.jicofo.config."org.jitsi.jicofo.BridgeSelector.BRIDGE_SELECTION_STRATEGY" = "RegionBasedBridgeSelectionStrategy";
 
     services.prosody = {
       extraModules = [ "muc_stats" ];
