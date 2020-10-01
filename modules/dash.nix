@@ -63,7 +63,7 @@ in
 
     services.nginx.virtualHosts.${virtualHost} = {
       enableACME = true;
-      forceSSL = true;
+      addSSL = true;
 
       locations."~ ^/dash/.*\.m4s$" = {
         root = "/run/nginx";
