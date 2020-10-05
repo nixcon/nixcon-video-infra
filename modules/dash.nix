@@ -37,30 +37,43 @@ in
 
     services.nginx.enable = true;
 
-    # FIXME: it would be nice if there was a services.nginx.modules
-    # option so these could compose.
-    services.nginx.package = with pkgs;
-      nginx.override { modules = with nginxModules; [ rtmp ]; };
+    systemd.services.ffmpeg = {
+      script = ''
+        rm -rf /run/nginx/dash
+        mkdir -p /run/nginx/dash
 
-    services.nginx.appendConfig = ''
-      rtmp {
-        server {
-          listen 1935;
-
-          application dash {
-            live on;
-            dash on;
-            dash_path /run/nginx/dash;
-          }
-        }
-      }
-    '';
+        ${pkgs.ffmpeg}/bin/ffmpeg -listen 1 -i rtmp://0.0.0.0:1935/src/main \
+          -c:a aac \
+          -c:v:0 libx264 -map v:0 -b:v:0 800k -s:0 854x480 -aspect:0 16:9 -preset:0 fast \
+          -c:v:1 libx264 -map v:0 -b:v:1 1400k -s:1 1280x720 -aspect:1 16:9 -preset:1 fast \
+          -c:v:2 copy -map v:0 -aspect:2 16:9 \
+          -g 60 \
+          -map 0:a \
+          -f dash \
+              -init_seg_name 'init$RepresentationID$.$ext$' \
+              -media_seg_name 'chunk$RepresentationID$-$Number%05d$.$ext$' \
+              -use_template 1 -use_timeline 1 \
+              -seg_duration 2 -window_size 20 -remove_at_exit 1 \
+              -hls_playlist 1 \
+              -streaming 1 -ldash 1 \
+              -adaptation_sets "id=0,streams=v id=1,streams=a" \
+              /run/nginx/dash/main.mpd
+      '';
+      serviceConfig.Restart = "always";
+    };
 
     services.nginx.virtualHosts.${virtualHost} = {
       enableACME = true;
-      forceSSL = true;
+      addSSL = true;
 
-      locations."/dash" = {
+      locations."~ ^/dash/.*\.m4s$" = {
+        root = "/run/nginx";
+        extraConfig = ''
+          add_header Access-Control-Allow-Origin *;
+        '';
+      };
+
+      locations."~ ^/dash/.*\.(mpd|m3u8)$" = {
         root = "/run/nginx";
         extraConfig = ''
           add_header Access-Control-Allow-Origin *;
