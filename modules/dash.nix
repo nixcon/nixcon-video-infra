@@ -45,8 +45,8 @@ in
         ${pkgs.ffmpeg}/bin/ffmpeg -listen 1 -i rtmp://0.0.0.0:1935/src/main \
           -c:a aac \
           -c:v:0 libx264 -map v:0 -b:v:0 800k -s:0 854x480 -aspect:0 16:9 -preset:0 fast \
-          -c:v:1 libx264 -map v:0 -b:v:1 1400k -s:1 1280x720 -preset:1 fast \
-          -c:v:2 copy -map v:0 \
+          -c:v:1 libx264 -map v:0 -b:v:1 1400k -s:1 1280x720 -aspect:1 16:9 -preset:1 fast \
+          -c:v:2 copy -map v:0 -aspect:2 16:9 \
           -map 0:a \
           -f dash \
               -init_seg_name 'init$RepresentationID$.$ext$' \
