@@ -37,6 +37,10 @@ let
       focus = "focus.${cfg.hostName}";
     };
     bosh = "//${cfg.hostName}/http-bind";
+
+    fileRecordingsEnabled = true;
+    liveStreamingEnabled = true;
+    hiddenDomain = "recorder.${cfg.hostName}";
   };
 in
 {
@@ -129,6 +133,16 @@ in
       '';
     };
 
+    jibri.enable = mkOption {
+      type = bool;
+      default = false;
+      description = ''
+        Whether to enable a Jibri instance and configure it to connect to Prosody.
+
+        Additional configuration is possible with <option>services.jibri</option>.
+      '';
+    };
+
     nginx.enable = mkOption {
       type = bool;
       default = true;
@@ -214,6 +228,14 @@ in
           key = "/var/lib/jitsi-meet/jitsi-meet.key";
         };
       };
+      virtualHosts."recorder.${cfg.hostName}" = {
+        enabled = true;
+        domain = "recorder.${cfg.hostName}";
+        extraConfig = ''
+          authentication = "internal_plain"
+          c2s_require_encryption = false
+        '';
+      };
     };
     systemd.services.prosody.serviceConfig = mkIf cfg.prosody.enable {
       EnvironmentFile = [ "/var/lib/jitsi-meet/secrets-env" ];
@@ -233,7 +255,7 @@ in
       };
 
       script = let
-        secrets = [ "jicofo-component-secret" "jicofo-user-secret" ] ++ (optional (cfg.videobridge.passwordFile == null) "videobridge-secret");
+        secrets = [ "jicofo-component-secret" "jicofo-user-secret" "jibri-auth-secret" "jibri-recorder-secret" ] ++ (optional (cfg.videobridge.passwordFile == null) "videobridge-secret");
         videobridgeSecret = if cfg.videobridge.passwordFile != null then cfg.videobridge.passwordFile else "/var/lib/jitsi-meet/videobridge-secret";
       in
       ''
@@ -254,6 +276,8 @@ in
       + optionalString cfg.prosody.enable ''
         ${config.services.prosody.package}/bin/prosodyctl register focus auth.${cfg.hostName} "$(cat /var/lib/jitsi-meet/jicofo-user-secret)"
         ${config.services.prosody.package}/bin/prosodyctl register jvb auth.${cfg.hostName} "$(cat ${videobridgeSecret})"
+        ${config.services.prosody.package}/bin/prosodyctl register jibri auth.${cfg.hostName} "$(cat /var/lib/jitsi-meet/jibri-auth-secret)"
+        ${config.services.prosody.package}/bin/prosodyctl register recorder recorder.${cfg.hostName} "$(cat /var/lib/jitsi-meet/jibri-recorder-secret)"
 
         # generate self-signed certificates
         if [ ! -f /var/lib/jitsi-meet.crt ]; then
@@ -323,8 +347,42 @@ in
       userPasswordFile = "/var/lib/jitsi-meet/jicofo-user-secret";
       componentPasswordFile = "/var/lib/jitsi-meet/jicofo-component-secret";
       bridgeMuc = "jvbbrewery@internal.${cfg.hostName}";
-      config = {
+      config = mkMerge [{
         "org.jitsi.jicofo.ALWAYS_TRUST_MODE_ENABLED" = "true";
+      } (lib.mkIf cfg.jibri.enable {
+        "org.jitsi.jicofo.jibri.BREWERY" = "JibriBrewery@internal.${cfg.hostName}";
+        "org.jitsi.jicofo.jibri.PENDING_TIMEOUT" = "90";
+      })];
+    };
+
+    services.jibri = mkIf cfg.jibri.enable {
+      enable = true;
+
+      xmppEnvironments."jitsi-meet" = {
+        xmppServerHosts = [ "localhost" ];
+        xmppDomain = cfg.hostName;
+
+        control.muc = {
+          domain = "internal.${cfg.hostName}";
+          roomName = "JibriBrewery";
+          nickname = "jibri";
+        };
+
+        control.login = {
+          domain = "auth.${cfg.hostName}";
+          username = "jibri";
+          passwordFile = "/var/lib/jitsi-meet/jibri-auth-secret";
+        };
+
+        call.login = {
+          domain = "recorder.${cfg.hostName}";
+          username = "recorder";
+          passwordFile = "/var/lib/jitsi-meet/jibri-recorder-secret";
+        };
+
+        usageTimeout = "0";
+        disableCertificateVerification = true;
+        stripFromRoomDomain = "conference.";
       };
     };
   };
